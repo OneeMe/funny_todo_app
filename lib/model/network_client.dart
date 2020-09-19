@@ -16,21 +16,15 @@ class NetworkClient {
   factory NetworkClient.instance() => _client;
 
   Future<String> login(String email, String password) async {
-    Map result;
-    try {
-      Response response = await post(
-        '$baseUrl/login',
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-        headers: commonHeaders,
-      );
-      result = JsonDecoder().convert(response.body);
-    } catch (e) {
-      result['error'] = '登录失败\n错误信息为 $e';
+    String successResult = '';
+    if (email.contains('@') && password.length >= 6) {
+      if (email.contains('lazy')) {
+        return Future.delayed(Duration(seconds: 2), () => successResult);
+      }
+      return Future.value(successResult);
     }
-    return result['error'];
+    String failedResult = '用户名或密码不正确';
+    return failedResult;
   }
 
   Future<String> register(
@@ -38,72 +32,64 @@ class NetworkClient {
     String password, {
     File image,
   }) async {
-    Map result;
-    try {
-      String responseJson;
-      String url = '$baseUrl/register';
-      if (image != null && image.existsSync()) {
-        MultipartRequest request = MultipartRequest('POST', Uri.parse(url));
-        request.fields['email'] = email;
-        request.fields['password'] = password;
-        MultipartFile file =
-            await MultipartFile.fromPath('image', image.absolute.path);
-        request.files.add(file);
-        StreamedResponse response = await request.send();
-        responseJson = await response.stream.bytesToString();
-      } else {
-        Response response = await post(
-          url,
-          body: jsonEncode({
-            'email': email,
-            'password': password,
-          }),
-          headers: commonHeaders,
-        );
-        responseJson = response.body;
-      }
-
-      result = JsonDecoder().convert(responseJson);
-    } catch (e) {
-      result['error'] = '注册失败\n错误信息为 $e';
-    }
-    return result['error'];
+    return '';
   }
 
   Future<String> uploadList(List<Todo> list, String userKey) async {
-    Map result = {};
-    try {
-      Response response = await post(
-        '$baseUrl/list',
-        body: JsonEncoder().convert({
-          'userKey': userKey,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'data': list.map((todo) => todo.toMap()).toList(),
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-      result = JsonDecoder().convert(response.body);
-    } catch (e) {
-      result['error'] = '服务器请求失败，请检查网络连接';
-    }
-    return result['error'];
+    return '';
   }
 
   Future<FetchListResult> fetchList(String userKey) async {
-    FetchListResult result;
-    try {
-      Response response = await get(
-        '$baseUrl/list?userKey=$userKey',
-        headers: commonHeaders,
-      );
-      result = FetchListResult.fromJson(JsonDecoder().convert(response.body));
-    } catch (e) {
-      result = FetchListResult(error: '服务器请求失败，请检查网络连接');
-    }
+    FetchListResult result = FetchListResult.fromJson({
+      'data': {
+        'data': [
+          {
+            "id": "d5c84ab0-fa5c-11ea-bfb9-995fca0419d8",
+            "title": "买早餐",
+            "description": "豆浆和油条",
+            "date": '1600444800000',
+            "start_time": "0:0",
+            "end_time": "0:0",
+            "priority": 0,
+            "is_finished": 0,
+            "is_star": 0,
+            "location_latitude": "0.0",
+            "location_longitude": "0.0",
+            "location_description": ""
+          },
+          {
+            "id": "de88bd60-fa5c-11ea-bfb9-995fca0419d8",
+            "title": "买午餐",
+            "description": "小鸡炖蘑菇",
+            "date": '1600444800000',
+            "start_time": "0:0",
+            "end_time": "0:0",
+            "priority": 3,
+            "is_finished": 0,
+            "is_star": 0,
+            "location_latitude": "0.0",
+            "location_longitude": "0.0",
+            "location_description": ""
+          },
+          {
+            "id": "84d07d20-fa5d-11ea-bfb9-995fca0419d8",
+            "title": "买晚餐",
+            "description": "猪肉炖粉条",
+            "date": '1600444800000',
+            "start_time": "0:0",
+            "end_time": "0:0",
+            "priority": 3,
+            "is_finished": 0,
+            "is_star": 0,
+            "location_latitude": "0.0",
+            "location_longitude": "0.0",
+            "location_description": ""
+          }
+        ],
+        'timestamp': '1600509378000',
+      },
+    });
     return result;
-    ;
   }
 }
 
@@ -117,7 +103,9 @@ class FetchListResult {
   factory FetchListResult.fromJson(Map<dynamic, dynamic> json) {
     return FetchListResult(
       data: json['data']['data'].map<Todo>((e) => Todo.fromMap(e)).toList(),
-      timestamp: DateTime.fromMicrosecondsSinceEpoch(json['data']['timestamp']),
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        int.parse(json['data']['timestamp']),
+      ),
     );
   }
 }
